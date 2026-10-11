@@ -77,6 +77,7 @@ python examples/sglang_inference.py --model-path /path/to/model
 - [Offline：Python API](docs/usage_zh.md#offline-python-api)
 - [Apple Silicon 的 MLX 后端](docs/usage_zh.md#offline-python-api)
 - [Online：HTTP 服务](docs/usage_zh.md#online-http-服务)
+- [Online：Python client](docs/usage_zh.md#python-client)
 - [`staged` 与 `all` 的选择](docs/usage_zh.md#如何选择-staged-或-all)
 - [多模态输入](docs/multimodal_zh.md)
 

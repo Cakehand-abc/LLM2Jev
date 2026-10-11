@@ -86,7 +86,64 @@ llm2jev-serve --backend mlx --model-path /path/to/mlx-model \
 
 三种服务均提供 `POST /v1/systemone` 和 `GET /v1/models`。MLX 与 Transformers 还提供公开的 `GET /health`。设置环境变量 `LLM2JEV_API_KEY` 可保护 `/v1` 接口；也可通过 `--api-key` 设置。
 
-请求中的 `model` 必须与 `--served-model-name` 一致；未指定别名时使用模型路径。示例：
+请求中的 `model` 必须与 `--served-model-name` 一致；未指定别名时使用模型路径。
+
+### Python client
+
+`Client` 和 `AsyncClient` 继承 OpenAI Python SDK 的 client，新增 `systemone.create()`。它们包含在包内，无需额外安装。
+
+```python
+from llm2jev import Client, Choice
+
+client = Client(base_url="http://localhost:30000/v1", api_key="unused")
+
+print(client.models.list())
+response = client.systemone.create(
+    model="local-model",
+    state="客户的包裹一直没有送到。",
+    questions={
+        "department": Choice(
+            instructions="哪个部门应当处理？",
+            criteria={"shipping": "物流配送", "billing": "账单问题"},
+        ),
+    },
+    include_choice_candidates=False,
+)
+print(response.choices["department"].probabilities)
+```
+
+`questions` 支持 `Choice`、`Score`、`Noul` 对象，也支持包含 `type` 的 JSON 字典，两种写法可以混用。`state` 与 offline 请求一样支持文本、JSON 和多模态内容。返回值是 `JevResponse`，包含类型化答案、`usage`、`to_dict()` 和 `json`。`include_choice_candidates` 默认 `True`，可在每次调用时设置。
+
+异步接口使用相同参数：
+
+```python
+import asyncio
+from llm2jev import AsyncClient, Noul
+
+async def main():
+    client = AsyncClient(base_url="http://localhost:30000/v1", api_key="unused")
+
+    response = await client.systemone.create(
+        model="local-model",
+        state="客户的包裹一直没有送到。",
+        questions={"delivery": Noul(instructions="这是物流配送问题吗？")},
+    )
+    print(response.nouls["delivery"].noul)
+
+asyncio.run(main())
+```
+
+同一个 client 可以重复调用。以上短脚本省略了显式关闭，进程退出时操作系统会回收连接资源。长期运行的程序应在不再使用 client 时调用 `client.close()`；异步 client 使用 `await client.close()`。
+
+`base_url` 应指向 llm2jev 服务的 `/v1` 地址。已启用认证时使用服务配置的 API key；未启用时可传入 `"unused"` 等占位值。OpenAI 官方服务不提供 `/systemone`。
+
+OpenAI SDK 的 `chat.completions`、`responses`、`models` 等接口，以及构造参数、上下文管理器、`with_options()` 均保留。能否调用某个接口取决于服务端：SGLang 提供其原生的 OpenAI 兼容接口；MLX 和 Transformers 服务目前只提供 `/v1/systemone`、`/v1/models` 和 `/health`。
+
+`systemone.create()` 支持单次调用的 `timeout`、`extra_headers` 和 `extra_query`。重试参数可在 client 初始化时配置，或通过 `client.with_options(max_retries=...)` 设置。HTTP 错误和超时沿用 OpenAI SDK 异常；成功响应的内容不合法时抛出 `openai.APIResponseValidationError`。请求参数在发送 HTTP 请求前通过现有请求模型校验。
+
+### curl
+
+也可以直接通过 HTTP 发送请求：
 
 ```bash
 curl http://localhost:30000/v1/systemone \

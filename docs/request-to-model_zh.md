@@ -151,7 +151,7 @@ Is this candidate "billing: 扣款和账单" the best answer?
 
 ### 按请求控制是否渲染完整选项列表
 
-`include_choice_candidates` 是 LLM2Jev 的请求级扩展，默认为 `true`。Online 调用在 HTTP JSON 顶层传入 `"include_choice_candidates": false`；offline 调用在 `JevRequest(...)` 中传入 `include_choice_candidates=False`。省略参数时继续渲染完整列表，各次请求的设置互不影响。完整调用示例见[使用指南](usage_zh.md)。
+`include_choice_candidates` 是 LLM2Jev 的请求级扩展，默认为 `true`。Online 调用可在 `client.systemone.create(...)` 中传入 `include_choice_candidates=False`，或在 HTTP JSON 顶层传入 `"include_choice_candidates": false`；offline 调用在 `JevRequest(...)` 中传入 `include_choice_candidates=False`。省略参数时继续渲染完整列表，各次请求的设置互不影响。同步 `Client`、异步 `AsyncClient` 接口及完整调用示例见[使用指南](usage_zh.md#python-client)。
 
 关闭后，上例 `billing` 的 user 消息变为：
 

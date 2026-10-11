@@ -1,3 +1,4 @@
+from .client import AsyncClient, Client
 from .inference import (
     BinaryQuestion,
     ChatMessage,
@@ -36,6 +37,7 @@ from .core import (
 
 __all__ = [
     "Answer",
+    "AsyncClient",
     "BinaryBackend",
     "BinaryBackendOutput",
     "BinaryQuestion",
@@ -43,6 +45,7 @@ __all__ = [
     "ChatPrompt",
     "Choice",
     "ChoiceAnswer",
+    "Client",
     "DefaultPromptRenderer",
     "JSONContent",
     "JSONValue",

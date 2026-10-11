@@ -74,6 +74,7 @@ See the [Usage guide](docs/usage.md) for complete examples:
 - [Offline: Python API](docs/usage.md#offline-python-api)
 - [MLX backend on Apple Silicon](docs/usage.md#offline-python-api)
 - [Online: HTTP service](docs/usage.md#online-http-service)
+- [Online: Python client](docs/usage.md#python-client)
 - [Choosing between `staged` and `all`](docs/usage.md#choosing-between-staged-and-all)
 - [Multimodal inputs](docs/multimodal.md)
 

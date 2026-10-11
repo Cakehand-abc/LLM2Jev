@@ -149,7 +149,7 @@ Other candidates use the same evidence, question objective and candidate list, c
 
 ### Control the full option list per request
 
-`include_choice_candidates` is an LLM2Jev request extension, defaulting to `true`. For online calls, send `"include_choice_candidates": false` at the top level of the HTTP JSON body. For offline calls, pass `include_choice_candidates=False` to `JevRequest(...)`. Omitting the parameter includes the full list, and each request controls its own setting. See the [usage guide](usage.md) for complete examples.
+`include_choice_candidates` is an LLM2Jev request extension, defaulting to `true`. For online calls, pass `include_choice_candidates=False` to `client.systemone.create(...)`, or send `"include_choice_candidates": false` at the top level of the HTTP JSON body. For offline calls, pass `include_choice_candidates=False` to `JevRequest(...)`. Omitting the parameter includes the full list, and each request controls its own setting. See the [usage guide](usage.md#python-client) for the synchronous `Client` and asynchronous `AsyncClient` interfaces and complete examples.
 
 With the list disabled, the user message for `billing` becomes:
 

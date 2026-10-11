@@ -86,7 +86,64 @@ llm2jev-serve --backend mlx --model-path /path/to/mlx-model \
 
 All three services provide `POST /v1/systemone` and `GET /v1/models`. MLX and Transformers also provide a public `GET /health`. Set `LLM2JEV_API_KEY` to protect `/v1` endpoints, or pass `--api-key`.
 
-The request's `model` must match `--served-model-name`; if no alias is set, it uses the model path. Example:
+The request's `model` must match `--served-model-name`; if no alias is set, it uses the model path.
+
+### Python client
+
+`Client` and `AsyncClient` extend the OpenAI Python SDK clients with `systemone.create()`. They are included in the package; no additional installation is needed.
+
+```python
+from llm2jev import Client, Choice
+
+client = Client(base_url="http://localhost:30000/v1", api_key="unused")
+
+print(client.models.list())
+response = client.systemone.create(
+    model="local-model",
+    state="The customer package has not arrived.",
+    questions={
+        "department": Choice(
+            instructions="Which department should handle this?",
+            criteria={"shipping": "Delivery", "billing": "Billing"},
+        ),
+    },
+    include_choice_candidates=False,
+)
+print(response.choices["department"].probabilities)
+```
+
+`questions` accepts `Choice`, `Score`, and `Noul` objects, JSON dictionaries containing `type`, or a mixture of both. `state` supports the same text, JSON, and multimodal content as offline requests. The result is a `JevResponse`, with typed answers, `usage`, `to_dict()`, and `json`. `include_choice_candidates` defaults to `True` and can be changed for each call.
+
+The asynchronous interface uses the same arguments:
+
+```python
+import asyncio
+from llm2jev import AsyncClient, Noul
+
+async def main():
+    client = AsyncClient(base_url="http://localhost:30000/v1", api_key="unused")
+
+    response = await client.systemone.create(
+        model="local-model",
+        state="The customer package has not arrived.",
+        questions={"delivery": Noul(instructions="Is this a delivery issue?")},
+    )
+    print(response.nouls["delivery"].noul)
+
+asyncio.run(main())
+```
+
+A client can be reused for multiple requests. These short scripts omit explicit cleanup because the operating system reclaims connections when the process exits. In a long-running program, close a client when it is no longer needed with `client.close()` or `await client.close()` for the asynchronous client.
+
+Set `base_url` to the llm2jev service's `/v1` URL. Use its configured API key, or a placeholder such as `"unused"` when authentication is disabled. The official OpenAI service does not provide `/systemone`.
+
+OpenAI SDK resources, including `chat.completions`, `responses`, and `models`, remain available, along with its constructor options, context managers, and `with_options()`. The server must support each endpoint: SGLang provides its native OpenAI-compatible endpoints; the MLX and Transformers services currently provide only `/v1/systemone`, `/v1/models`, and `/health`.
+
+`systemone.create()` accepts per-call `timeout`, `extra_headers`, and `extra_query`. Set retry options on the client or through `client.with_options(max_retries=...)`. HTTP failures and timeouts use the OpenAI SDK exceptions; invalid successful response bodies raise `openai.APIResponseValidationError`. Request inputs are validated with the existing request models before an HTTP request is sent.
+
+### curl
+
+The same request can be sent directly over HTTP:
 
 ```bash
 curl http://localhost:30000/v1/systemone \
