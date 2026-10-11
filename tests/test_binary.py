@@ -11,6 +11,15 @@ from llm2jev import (
 
 
 class BinaryQuestionTests(unittest.TestCase):
+    def test_rejects_non_boolean_choice_candidates_switch(self) -> None:
+        for value in (None, 0, 1, "false"):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "include_choice_candidates"):
+                BinaryQuestion(
+                    question_id="department", question_type="choice", candidate="billing",
+                    context="message", objective=None, condition=None,
+                    include_choice_candidates=value,  # type: ignore[arg-type]
+                )
+
     def test_validates_candidate_for_question_type(self) -> None:
         with self.assertRaises(ValueError):
             BinaryQuestion(
@@ -200,6 +209,17 @@ class CompileBinaryQuestionsTests(unittest.TestCase):
                 (("billing", "Payments"), ("technical", None)),
             ],
         )
+
+    def test_hiding_candidates_preserves_all_choice_tasks_and_descriptions(self) -> None:
+        request = JevRequest(
+            state="Charged twice", model="jev-latest", include_choice_candidates=False,
+            questions={"department": Choice(criteria={"billing": "Payments", "technical": None})},
+        )
+        tasks = compile_binary_questions(request)
+        self.assertEqual([task.candidate for task in tasks], ["billing", "technical"])
+        self.assertEqual([task.condition for task in tasks], ["Payments", None])
+        self.assertTrue(all(not task.include_choice_candidates for task in tasks))
+        self.assertTrue(all(task.choices == (("billing", "Payments"), ("technical", None)) for task in tasks))
 
 
 if __name__ == "__main__":

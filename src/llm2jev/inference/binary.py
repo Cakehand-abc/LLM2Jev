@@ -28,12 +28,15 @@ class BinaryQuestion:
     score_levels: tuple[JSONContent, ...] | None = None
     noul_has_criteria: bool = False
     noul_candidates: tuple[JSONContent | None, ...] | None = None
+    include_choice_candidates: bool = True
 
     def __post_init__(self) -> None:
         if not isinstance(self.question_id, str) or not self.question_id:
             raise ValueError("question_id must be a non-empty string")
         if self.question_type not in {"choice", "score", "noul"}:
             raise ValueError("question_type must be choice, score, or noul")
+        if not isinstance(self.include_choice_candidates, bool):
+            raise ValueError("include_choice_candidates must be a boolean")
         if not is_json_content(self.context):
             raise ValueError("context must be a string, JSON object, or JSON array")
         validate_multimodal(self.context)
@@ -132,6 +135,7 @@ def compile_binary_questions(request: JevRequest) -> tuple[BinaryQuestion, ...]:
                         objective=question.instructions,
                         condition=description,
                         choices=tuple(question.criteria.items()),
+                        include_choice_candidates=request.include_choice_candidates,
                     )
                 )
         elif isinstance(question, Score):

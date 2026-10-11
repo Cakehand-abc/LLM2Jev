@@ -51,6 +51,7 @@ def parse_request(payload: object) -> JevRequest:
     return JevRequest(
         state=payload["state"],  # type: ignore[arg-type]
         model=payload["model"],  # type: ignore[arg-type]
+        include_choice_candidates=payload.get("include_choice_candidates", True),  # type: ignore[arg-type]
         questions={
             question_id: parse_question(question)
             for question_id, question in questions.items()

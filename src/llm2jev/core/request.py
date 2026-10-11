@@ -20,6 +20,7 @@ class JevRequest:
     state: State
     model: str
     questions: Mapping[str, Question]
+    include_choice_candidates: bool = True
 
     def __post_init__(self) -> None:
         if not is_json_content(self.state):
@@ -27,6 +28,8 @@ class JevRequest:
         validate_multimodal(self.state)
         if not isinstance(self.model, str) or not self.model.strip():
             raise ValueError("model must be a non-empty string")
+        if not isinstance(self.include_choice_candidates, bool):
+            raise ValueError("include_choice_candidates must be a boolean")
 
         questions = dict(self.questions)
         if not questions:
@@ -38,7 +41,7 @@ class JevRequest:
         object.__setattr__(self, "questions", questions)
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        result: dict[str, object] = {
             "state": self.state,
             "model": self.model,
             "questions": {
@@ -46,3 +49,6 @@ class JevRequest:
                 for question_id, question in self.questions.items()
             },
         }
+        if not self.include_choice_candidates:
+            result["include_choice_candidates"] = False
+        return result

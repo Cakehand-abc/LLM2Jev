@@ -1,9 +1,11 @@
 import io
+import importlib.util
 import unittest
 from contextlib import redirect_stderr
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from llm2jev import BinaryBackendOutput
 from llm2jev.server import mlx_server, server, transformers_server
 from llm2jev.inference.request_parser import parse_request
 from llm2jev.server.sglang_server import _parse_request
@@ -30,6 +32,47 @@ class ServerDispatchTests(unittest.TestCase):
 
     def test_shared_parser_preserves_sglang_import(self) -> None:
         self.assertIs(_parse_request, parse_request)
+
+
+@unittest.skipUnless(importlib.util.find_spec("httpx"), "requires httpx")
+class RequestRenderingHTTPTests(unittest.IsolatedAsyncioTestCase):
+    async def test_each_backend_honors_request_switch_without_affecting_next_request(self) -> None:
+        import httpx
+
+        payload = {
+            "state": "Package delayed", "model": "local",
+            "questions": {"department": {
+                "type": "choice", "criteria": {"shipping": "Delivery", "billing": "Payments"},
+            }},
+        }
+        for module in (mlx_server, transformers_server):
+            with self.subTest(backend=module.__name__), patch.dict("os.environ", {"LLM2JEV_API_KEY": ""}):
+                backend = Mock()
+                backend.score.return_value = BinaryBackendOutput(yes_probabilities=[0.8, 0.2])
+                app = module.create_app("local", backend_factory=lambda: backend)
+                async with app.router.lifespan_context(app):
+                    async with httpx.AsyncClient(
+                        transport=httpx.ASGITransport(app=app), base_url="http://test",
+                    ) as client:
+                        for enabled in (False, True, None):
+                            body = dict(payload)
+                            if enabled is not None:
+                                body["include_choice_candidates"] = enabled
+                            response = await client.post("/v1/systemone", json=body)
+                            self.assertEqual(response.status_code, 200, response.text)
+                            self.assertEqual(set(response.json()["answers"]["department"]["probabilities"]),
+                                             {"shipping", "billing"})
+                            prompts = backend.score.call_args.kwargs["prompts"]
+                            self.assertEqual("All candidates:" in prompts[0][1]["content"], enabled is not False)
+                            self.assertIn('Is this candidate "shipping: Delivery" the best answer?', prompts[0][1]["content"])
+                            if enabled is False:
+                                self.assertNotIn("billing", prompts[0][1]["content"])
+                        for value in ("false", 0, None):
+                            response = await client.post("/v1/systemone", json={
+                                **payload, "include_choice_candidates": value,
+                            })
+                            self.assertEqual(response.status_code, 422, response.text)
+                        self.assertEqual(backend.score.call_count, 3)
 
 
 class MLXServerArgumentTests(unittest.TestCase):

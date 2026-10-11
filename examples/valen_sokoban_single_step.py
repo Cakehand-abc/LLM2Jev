@@ -7,7 +7,7 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from valen_sokoban import DIRECTION_NAMES, SokobanPromptRenderer, record_to_request
+from valen_sokoban import DIRECTION_NAMES, record_to_request
 from sokoban_eval.env import ACTIONS, Board, State, transition
 from llm2jev.backend.sglang import SGLangBackend
 from llm2jev.core.questions import Choice
@@ -27,11 +27,7 @@ def evaluate(*, model_path: Path, eval_dir: Path, chunk_size: int,
     if limit is not None:
         records = records[:limit]
 
-    renderer = (
-        SokobanPromptRenderer()
-        if renderer_type == "no-candidates"
-        else DefaultPromptRenderer()
-    )
+    renderer = DefaultPromptRenderer()
     prepared = []
     prompts = []
     candidate_order_count = 5 if task_type == "immediate-push" else 4
@@ -67,6 +63,7 @@ def evaluate(*, model_path: Path, eval_dir: Path, chunk_size: int,
             rotated_request = JevRequest(
                 model=request.model,
                 state=request.state,
+                include_choice_candidates=renderer_type != "no-candidates",
                 questions={
                     "next_action": Choice(
                         instructions=question.instructions,

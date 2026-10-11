@@ -3,6 +3,7 @@ import math
 import nturl2path
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -109,6 +110,29 @@ class MultimodalContentTests(unittest.TestCase):
             self.assertIn('Is this candidate "Red" the best answer?', parts[0][-1]["text"])
             self.assertIn('Is this candidate "Not red" the best answer?', parts[1][-1]["text"])
             self.assertEqual(sum(p["type"] == "image_url" for p in parts[0]), 1)
+
+    def test_choice_candidates_switch_preserves_images_and_current_candidate(self):
+        for in_state in (True, False):
+            with self.subTest(in_state=in_state):
+                request = JevRequest(
+                    state=image_text() if in_state else "shared", model="local",
+                    questions={"q": Choice(
+                        instructions="Which action?" if in_state else image_text(text="Which action?"),
+                        criteria={"up": "Move up", "down": "Move down"},
+                    )},
+                )
+                renderer = DefaultPromptRenderer()
+                default = [renderer.render(t) for t in compile_binary_questions(request)]
+                hidden = [renderer.render(t) for t in compile_binary_questions(
+                    replace(request, include_choice_candidates=False)
+                )]
+                for index, candidate in enumerate(("up: Move up", "down: Move down")):
+                    self.assertEqual(hidden[index][0], default[index][0])
+                    self.assertEqual(hidden[index][1]["content"][:-1], default[index][1]["content"][:-1])
+                    self.assertEqual(
+                        hidden[index][1]["content"][-1]["text"],
+                        f'\nIs this candidate "{candidate}" the best answer?',
+                    )
 
     def test_interleaved_parts_keep_order_and_do_not_alias_request(self):
         value = image_text("first.png")

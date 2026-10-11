@@ -104,21 +104,23 @@ Even when the LLM successfully writes `0.8`, it has generated numeric text. That
 
 ## LLM2Jev: first construct independent yes/no judgments
 
-LLM2Jev first converts each option in a Jev Request into a separate LLM input asking whether that option fits the evidence. Once these inputs are constructed, it reads the LLM's yes/no scores, calculates probabilities and assembles the results.
+LLM2Jev first converts each option in a Jev Request into a separate LLM input. For Choice, the current template asks whether that option is the best answer to the question. Once these inputs are constructed, it reads the LLM's yes/no scores, calculates probabilities and assembles the results.
 
 ### Why judge each option independently?
 
-The main goal is to let the LLM judge each option against the evidence independently, reducing the effect of option positions when all options appear together in one prompt.
+Each option receives its own yes/no score, and code assembles those scores into a candidate probability distribution. The judgments do not need to wait for other candidates' answers, so they can be scored in batches.
 
 The department question becomes three inputs:
 
 | Candidate | Judgment |
 | --- | --- |
-| shipping | Does delivery fit this customer message? |
-| billing | Do charges and billing fit this customer message? |
-| returns | Do returns and exchanges fit this customer message? |
+| shipping | Is delivery the best department to handle this customer message? |
+| billing | Are charges and billing the best department to handle this customer message? |
+| returns | Are returns and exchanges the best department to handle this customer message? |
 
-Each input contains the same evidence and question objective, but only the current candidate and its definition. Reordering these independent inputs does not change the text seen for an individual candidate; it does not need to favor the “first” or “last” entry in a list of options. Exact ties in the final probabilities select the first option in the original criteria order. Score level order also defines its meaning and cannot be shuffled arbitrarily.
+Each input contains the same evidence and question objective and identifies the candidate being evaluated. By default, it also includes the full candidate list for comparison. Setting the request's top-level `include_choice_candidates` to `false` omits that list and retains only the current candidate and its definition.
+
+Reordering the submission of these inputs does not change the text seen for an individual candidate. However, the default list follows `criteria` order, so changing the option order can still affect model scores; independent scoring alone does not guarantee removal of order effects. Exact ties in the final probabilities select the first option in the original `criteria` order. Score level order also defines its meaning and cannot be shuffled arbitrarily.
 
 ### What does a yes/no input look like?
 
@@ -144,6 +146,23 @@ Is this candidate "billing: Charges and billing" the best answer?
 ```
 
 Other candidates use the same evidence, question objective and candidate list, changing only the candidate quoted in the final line. Users can define new options and meanings with each request without adding a fixed classification head for every option set.
+
+### Control the full option list per request
+
+`include_choice_candidates` is an LLM2Jev request extension, defaulting to `true`. For online calls, send `"include_choice_candidates": false` at the top level of the HTTP JSON body. For offline calls, pass `include_choice_candidates=False` to `JevRequest(...)`. Omitting the parameter includes the full list, and each request controls its own setting. See the [usage guide](usage.md) for complete examples.
+
+With the list disabled, the user message for `billing` becomes:
+
+```text
+Context:
+My card was charged twice. Please refund the extra charge.
+
+Question:
+Which department should handle this request?
+Is this candidate "billing: Charges and billing" the best answer?
+```
+
+The default renderer honors this switch for text and multimodal inputs. It only omits the full Choice list, retaining the current candidate and its description; the question still asks for “the best answer.” The request must still supply `criteria`, and every option is still scored independently. Noul candidate descriptions, Score rating scales, probability assembly rules and response structures are unaffected. Changing the prompt can change model scores; any accuracy improvement requires evaluation.
 
 The backend applies the LLM's chat template to each message pair, adds role and assistant-start markers, then tokenizes the complete messages. A Jev question has now become multiple yes/no inputs ready for the LLM to score. The next step is to obtain probabilities from those inputs.
 
@@ -205,7 +224,7 @@ Confidence describes concentration of the candidate distribution, not a separate
 
 Splitting the request this way has an obvious consequence: the evidence and question instructions that appeared once now appear in every candidate input. More candidates and longer evidence can substantially increase the total input-token count. Although JSON decoding has been removed, these additional inputs appear to add computation time.
 
-If every candidate is processed from scratch, that repeated work does exist. But a closer look shows that many of the additional tokens are identical: candidates in the same request share `state`, and candidates for the same question also share its instructions. Only the candidate content that follows differs.
+If every candidate is processed from scratch, that repeated work does exist. But a closer look shows that many of the additional tokens are identical: candidates in the same request share `state`, and candidates for the same question also share its instructions. With the list enabled by default, the full candidate list for a Choice question is also part of its shared prefix. Only the current candidate content that follows differs. Disabling the list shortens the inputs without reducing the number of candidate judgments or changing how caching matches actual token prefixes.
 
 This is where shared prefixes help. With shared-prefix KV caching, later candidates can reuse an identical input prefix already processed by the LLM and continue from the point where their inputs diverge. A larger total input-token count therefore does not mean every token must be computed again. Candidate judgments also do not depend on each other's answers, so they can be scored in parallel batches. Staged submission arranges which candidates establish the cache first and which reuse it afterward.
 

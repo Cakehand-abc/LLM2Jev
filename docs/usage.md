@@ -14,6 +14,7 @@ from llm2jev import Choice, JevRequest, LLM2Jev, Noul, Score
 request = JevRequest(
     model="/path/to/model",
     state="My parcel arrived two weeks late, and my card was charged twice.",
+    # include_choice_candidates=False,  # Optional: omit the full Choice candidate list
     questions={
         "department": Choice(criteria={"shipping": "Delivery", "billing": "Billing"}),
         "severity": Score(criteria=["Low", "Medium", "High"]),
@@ -21,6 +22,8 @@ request = JevRequest(
     },
 )
 ```
+
+`include_choice_candidates` is a top-level boolean for each request, defaulting to `True`. Set it to `False` to have the default renderer omit the `All candidates:` list while retaining the current Choice candidate and its description. This supports text and multimodal inputs. Every option is still scored; Noul and Score prompts are unaffected. Each request controls its own setting.
 
 **SGLang** (Linux/NVIDIA):
 
@@ -98,6 +101,23 @@ curl http://localhost:30000/v1/systemone \
       }
     }
   }'
+```
+
+To omit the full Choice candidate list, send `"include_choice_candidates": false` at the top level of the HTTP request. All three backends support it without restarting the service. Omitting the field or sending `true` includes the full list. Only booleans are accepted; strings such as `"false"`, numbers, and `null` return 422. Example:
+
+```json
+{
+  "model": "local-model",
+  "state": "The customer package has not arrived.",
+  "include_choice_candidates": false,
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "Which department should handle this?",
+      "criteria": {"shipping": "Delivery", "billing": "Billing"}
+    }
+  }
+}
 ```
 
 SGLang and MLX support `--submission staged|all`. Transformers also accepts the option for CLI consistency, but it currently has no effect on inference.

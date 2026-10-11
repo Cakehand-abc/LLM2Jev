@@ -11,7 +11,6 @@ from collections.abc import Mapping
 
 from PIL import ImageDraw
 from llm2jev import LLM2Jev, SGLangBackend, Choice, JevRequest
-from llm2jev.inference.prompt import DefaultPromptRenderer
 
 
 ACTIONS = ("up", "down", "left", "right")
@@ -19,14 +18,6 @@ DIRECTION_NAMES = {
     "en": {"up": "up", "down": "down", "left": "left", "right": "right"},
     "zh": {"up": "向上", "down": "向下", "left": "向左", "right": "向右"},
 }
-
-
-class SokobanPromptRenderer(DefaultPromptRenderer):
-    """Render each Sokoban action without listing the other candidates."""
-
-    @staticmethod
-    def _choice_candidates(question) -> str:
-        return ""
 
 
 def _state_and_image(request: Mapping[str, Any], eval_dir: Path,
@@ -67,6 +58,7 @@ def record_to_request(request: Mapping[str, Any], eval_dir: Path, model: str,
 
     return JevRequest(
         model=model,
+        include_choice_candidates=False,
         state=_state_and_image(request, eval_dir, action_history, language),
         questions={
             "next_action": Choice(
@@ -102,7 +94,7 @@ def make_gif(*, model_path: Path, eval_dir: Path, level_id: str,
                          "chunked_prefill_size": -1, "log_level": "error"}
 
         with SGLangBackend(model_path, submission="all", engine_kwargs=device_options) as backend:
-            engine = LLM2Jev(backend=backend, renderer=SokobanPromptRenderer())
+            engine = LLM2Jev(backend=backend)
 
             while env.steps < env.max_steps and not board.solved(env.state):
                 image_path = temporary_path / f"step-{env.steps:03d}.png"

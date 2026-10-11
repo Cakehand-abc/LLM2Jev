@@ -1,5 +1,6 @@
 import unittest
 from collections.abc import Sequence
+from dataclasses import replace
 
 from llm2jev import (
     BinaryBackendOutput,
@@ -114,6 +115,39 @@ class LLM2JevTests(unittest.TestCase):
         self.assertIsInstance(answer, ChoiceAnswer)
         self.assertEqual(answer.probabilities, {"calm": 0.6, "angry": 0.4})  # type: ignore[union-attr]
         self.assertTrue(all(prompt[1]["content"] == "fixed" for prompt in backend.calls[0][1]))
+
+    def test_choice_candidates_switch_is_per_request_and_preserves_other_types(self) -> None:
+        for description in (None, "Charges and payments"):
+            with self.subTest(description=description):
+                request = JevRequest(
+                    state="Duplicate charge", model="test-model",
+                    questions={
+                        "department": Choice(
+                            instructions="Which team?",
+                            criteria={"billing": description, "returns": "Exchanges"},
+                        ),
+                        "severity": Score(criteria=["Low", "High"]),
+                        "refund": Noul(criteria={"true": "Refund", "false": "No refund"}),
+                    },
+                )
+                backend = FakeBackend([0.8, 0.2, 0.25, 0.75, 0.7, 0.3])
+                engine = LLM2Jev(backend=backend)
+                expected = engine.evaluate(request)
+                actual = engine.evaluate(replace(request, include_choice_candidates=False))
+                engine.evaluate(request)
+                default, hidden, repeated = [call[1] for call in backend.calls]
+
+                candidate = "billing" if description is None else f"billing: {description}"
+                self.assertEqual(
+                    hidden[0][1]["content"],
+                    "Context:\nDuplicate charge\n\nQuestion:\nWhich team?\n"
+                    f'Is this candidate "{candidate}" the best answer?',
+                )
+                self.assertNotIn("billing", hidden[1][1]["content"])
+                self.assertIn('Is this candidate "returns: Exchanges" the best answer?', hidden[1][1]["content"])
+                self.assertEqual(hidden[2:], default[2:])
+                self.assertEqual(default, repeated)
+                self.assertEqual(actual, expected)
 
     def test_rejects_backend_probability_count_mismatch(self) -> None:
         request = JevRequest(

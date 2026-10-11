@@ -43,6 +43,28 @@ class SystemOneRequestParsingTests(unittest.TestCase):
         self.assertIsInstance(request.questions["urgency"], Score)
         self.assertIsInstance(request.questions["delivery"], Noul)
         self.assertEqual(request.model, "local-model")
+        self.assertTrue(request.include_choice_candidates)
+
+    def test_parses_and_round_trips_choice_candidates_switch(self) -> None:
+        for enabled in (True, False):
+            with self.subTest(enabled=enabled):
+                payload = {
+                    "state": "text", "model": "local-model",
+                    "questions": {"check": {"type": "noul"}},
+                    "include_choice_candidates": enabled,
+                }
+                request = _parse_request(payload)
+                self.assertEqual(request.include_choice_candidates, enabled)
+                self.assertEqual(_parse_request(request.to_dict()), request)
+
+    def test_rejects_non_boolean_choice_candidates_switch(self) -> None:
+        for value in (None, 0, 1, "false", [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "include_choice_candidates"):
+                _parse_request({
+                    "state": "text", "model": "local-model",
+                    "questions": {"check": {"type": "noul"}},
+                    "include_choice_candidates": value,
+                })
 
     def test_rejects_missing_and_malformed_fields(self) -> None:
         invalid = (
@@ -88,6 +110,7 @@ class SystemOneEvaluationTests(unittest.IsolatedAsyncioTestCase):
         request = JevRequest(
             state="Package delayed",
             model="local-model",
+            include_choice_candidates=False,
             questions={
                 "department": Choice(criteria={"shipping": None, "billing": None}),
             },
@@ -107,6 +130,11 @@ class SystemOneEvaluationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.answers["department"].choice, "shipping")
         self.assertEqual(response.usage.input_tokens, 6)
         self.assertEqual(response.usage.output_tokens, 0)
+        prompts = [call.args[0][-1]["content"] for call in tokenizer.apply_chat_template.call_args_list]
+        self.assertTrue(all("All candidates:" not in prompt for prompt in prompts))
+        self.assertIn('Is this candidate "shipping" the best answer?', prompts[0])
+        self.assertNotIn("billing", prompts[0])
+        self.assertIn('Is this candidate "billing" the best answer?', prompts[1])
 
     async def test_default_stages_restore_candidate_order_and_sum_usage(self) -> None:
         # Candidate 2 seeds a separate branch before candidate 1 is submitted.
@@ -175,6 +203,7 @@ class SystemOneEvaluationTests(unittest.IsolatedAsyncioTestCase):
         payload = {
             "state": "text", "model": "local-model",
             "questions": {"check": {"type": "noul"}},
+            "include_choice_candidates": False,
         }
         modules = {
             "fastapi": SimpleNamespace(HTTPException=Exception),

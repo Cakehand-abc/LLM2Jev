@@ -14,6 +14,7 @@ from llm2jev import Choice, JevRequest, LLM2Jev, Noul, Score
 request = JevRequest(
     model="/path/to/model",
     state="包裹晚到了两周，信用卡还被扣了两次。",
+    # include_choice_candidates=False,  # 可选：省略 Choice 的完整候选列表
     questions={
         "department": Choice(criteria={"shipping": "物流配送", "billing": "账单问题"}),
         "severity": Score(criteria=["低", "中", "高"]),
@@ -21,6 +22,8 @@ request = JevRequest(
     },
 )
 ```
+
+`include_choice_candidates` 是每次请求的顶层布尔参数，默认为 `True`。设为 `False` 时，默认 renderer 在每个 Choice 判断中仅保留当前候选及其说明，省略 `All candidates:` 列表。文本和多模态输入均支持；所有选项仍参与评分，Noul 和 Score 的提示词不受影响。各次请求的设置互不影响。
 
 **SGLang**（Linux/NVIDIA）：
 
@@ -98,6 +101,23 @@ curl http://localhost:30000/v1/systemone \
       }
     }
   }'
+```
+
+需要省略 Choice 的完整候选列表时，在本次 HTTP 请求顶层传入 `"include_choice_candidates": false`。三种后端均支持，无需重启服务；省略字段或传入 `true` 时渲染完整列表。参数只接受布尔值，字符串 `"false"`、数字及 `null` 会返回 422。例如：
+
+```json
+{
+  "model": "local-model",
+  "state": "客户的包裹一直没有送到。",
+  "include_choice_candidates": false,
+  "questions": {
+    "department": {
+      "type": "choice",
+      "instructions": "哪个部门应当处理？",
+      "criteria": {"shipping": "物流配送", "billing": "账单问题"}
+    }
+  }
+}
 ```
 
 SGLang 和 MLX 支持 `--submission staged|all`；Transformers 也接受该参数以保持命令一致，但目前不影响其推理行为。

@@ -67,6 +67,24 @@ class JevRequestTests(unittest.TestCase):
             ["First message", {"message": "Second message"}],
         )
 
+    def test_serializes_choice_candidates_switch(self) -> None:
+        for enabled in (True, False):
+            with self.subTest(enabled=enabled):
+                request = JevRequest(
+                    state="message", model="jev-latest", questions={"check": Noul()},
+                    include_choice_candidates=enabled,
+                )
+                self.assertEqual(request.include_choice_candidates, enabled)
+                self.assertEqual(request.to_dict().get("include_choice_candidates", True), enabled)
+
+    def test_rejects_non_boolean_choice_candidates_switch(self) -> None:
+        for value in (None, 0, 1, "false", [], {}):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "include_choice_candidates"):
+                JevRequest(
+                    state="message", model="jev-latest", questions={"check": Noul()},
+                    include_choice_candidates=value,  # type: ignore[arg-type]
+                )
+
     def test_rejects_invalid_state(self) -> None:
         with self.assertRaises(ValueError):
             JevRequest(

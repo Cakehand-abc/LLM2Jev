@@ -106,11 +106,10 @@ class DefaultPromptRenderer:
         elif question.question_type == "noul":
             text = objective
         elif question.question_type == "choice":
-            text = (
-                f"{objective}\n"
-                f"{self._choice_candidates(question)}\n"
-                f'Is this candidate "{self._choice_under_evaluation(question)}" the best answer?'
-            )
+            text = f"{objective}\n"
+            if question.include_choice_candidates:
+                text += f"{self._choice_candidates(question)}\n"
+            text += f'Is this candidate "{self._choice_under_evaluation(question)}" the best answer?'
         else:
             text = (
                 f"{objective}\n"
@@ -166,10 +165,10 @@ class DefaultPromptRenderer:
         elif question.question_type == "noul":
             text = ""
         elif question.question_type == "choice":
-            text = (
-                f"\n{self._choice_candidates(question)}\n"
-                f'Is this candidate "{self._choice_under_evaluation(question)}" the best answer?'
-            )
+            text = "\n"
+            if question.include_choice_candidates:
+                text += f"{self._choice_candidates(question)}\n"
+            text += f'Is this candidate "{self._choice_under_evaluation(question)}" the best answer?'
         else:
             text = (
                 f"\n{self._score_scale(question)}\n"
