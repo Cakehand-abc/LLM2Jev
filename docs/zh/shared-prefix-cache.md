@@ -1,8 +1,8 @@
 # 共享前缀：让多个判断复用同一段上下文
 
-[English](shared-prefix-cache.md) · [返回 README](../README_zh.md)
+[English](../en/shared-prefix-cache.md) · [返回 README](../../README_zh.md)
 
-前置阅读：[从 JevRequest 到 LLM 输入](request-to-model_zh.md)，先了解为什么一个请求会产生多个候选判断，以及这些分数如何组成最终答案。
+前置阅读：[从 JevRequest 到 LLM 输入](request-to-model.md)，先了解为什么一个请求会产生多个候选判断，以及这些分数如何组成最终答案。
 
 本页的 LLM 指用于候选评分的大语言模型，例如 Qwen3。一次 LLM2Jev 请求可以对同一份材料提出多个问题。共享前缀缓存让这些判断复用 LLM 已经处理过的输入前缀，减少重复计算。对于长上下文、多候选的请求，即使没有任何历史请求命中缓存，也可以获得明显加速。
 
@@ -45,7 +45,7 @@ LLM 处理输入时会产生用于注意力计算的中间结果，通常称为 
 
 下图展示同一个冷请求中的三轮提交。每行从左到右对应 `state`、所属题的 `instructions` 和一个 `criteria` 候选；`department` 指部门问题，`severity` 指严重程度问题。Choice 的 `criteria.shipping` 是 `criteria["shipping"]` 的简写，包含选项名称及定义。蓝色实线块（New computation）表示本轮需要计算的部分，绿色虚线块（Reuse cached KV）表示复用之前轮次已经建立的 KV；右侧展示每轮结束后的公共缓存。
 
-![LLM2Jev 分三轮评分 criteria 候选：先建立 state 和 department.instructions 的缓存，再建立 severity.instructions 的缓存，后续候选复用 SGLang Radix Cache 中的公共前缀。](../assets/shared-prefix-stages.svg)
+![LLM2Jev 分三轮评分 criteria 候选：先建立 state 和 department.instructions 的缓存，再建立 severity.instructions 的缓存，后续候选复用 SGLang Radix Cache 中的公共前缀。](../../assets/shared-prefix-stages.svg)
 
 图中的提交顺序是：
 
@@ -65,7 +65,7 @@ LLM2Jev 负责的是提交顺序：根据完整输入的 token 前缀，先选�
 
 因此，两者配合才能获得图中的效果：Radix Cache 提供复用能力，分阶段提交让后续候选到达时已有可用缓存。仅将所有候选同时交给引擎，不保证冷批次内部的公共前缀只计算一次；缓存被驱逐时，也需要重新计算相应部分。
 
-使用方法和模式选择见[使用指南](usage_zh.md)，实测数据和测试条件见[性能测评](shared-prefix-benchmarks_zh.md)。
+使用方法和模式选择见[使用指南](usage.md)，实测数据和测试条件见[性能测评](shared-prefix-benchmarks.md)。
 
 ## 输出和缓存需要注意什么？
 

@@ -31,8 +31,8 @@ uv run --extra mlx-vlm --extra server llm2jev-serve \
   --served-model-name local-vlm --port 30000
 ```
 
-See the [multimodal guide](../../docs/multimodal.md) for the request format and
-[MLX guide](../../docs/mlx.md) for model support and batching options.
+See the [multimodal guide](../../docs/en/multimodal.md) for the request format and
+[usage guide](../../docs/en/usage.md) for MLX model support and batching options.
 
 In another terminal, start the demo server from the repository root:
 

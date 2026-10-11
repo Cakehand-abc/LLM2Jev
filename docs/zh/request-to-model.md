@@ -1,6 +1,6 @@
 # 从 Jev Request 到 LLM Request
 
-[English](request-to-model.md) · [返回 README](../README_zh.md)
+[English](../en/request-to-model.md) · [返回 README](../../README_zh.md)
 
 下面介绍的是 **LLM2Jev 如何用 LLM 实现这种请求**，不代表 Jev 官方服务的内部实现。
 
@@ -151,7 +151,7 @@ Is this candidate "billing: 扣款和账单" the best answer?
 
 ### 按请求控制是否渲染完整选项列表
 
-`include_choice_candidates` 是 LLM2Jev 的请求级扩展，默认为 `true`。Online 调用可在 `client.systemone.create(...)` 中传入 `include_choice_candidates=False`，或在 HTTP JSON 顶层传入 `"include_choice_candidates": false`；offline 调用在 `JevRequest(...)` 中传入 `include_choice_candidates=False`。省略参数时继续渲染完整列表，各次请求的设置互不影响。同步 `Client`、异步 `AsyncClient` 接口及完整调用示例见[使用指南](usage_zh.md#python-client)。
+`include_choice_candidates` 是 LLM2Jev 的请求级扩展，默认为 `true`。Online 调用可在 `client.systemone.create(...)` 中传入 `include_choice_candidates=False`，或在 HTTP JSON 顶层传入 `"include_choice_candidates": false`；offline 调用在 `JevRequest(...)` 中传入 `include_choice_candidates=False`。省略参数时继续渲染完整列表，各次请求的设置互不影响。同步 `Client`、异步 `AsyncClient` 接口及完整调用示例见[使用指南](usage.md#python-client)。
 
 关闭后，上例 `billing` 的 user 消息变为：
 
@@ -230,4 +230,4 @@ confidence = (n × p_max - 1) / (n - 1)
 
 这就可以利用公共前缀。通过共享前缀 KV 缓存，LLM 已经计算过的相同输入前缀可以被后续候选复用，从分叉的位置继续处理。因此，合计输入 token 数增加，并不意味着所有这些 token 都必须重新计算。这些候选判断也不依赖彼此的回答，可以批量并行评分；分阶段提交则安排哪些候选先建立缓存、哪些候选随后复用缓存执行。
 
-前缀复用能节省多少计算，是否足以抵消多轮提交的开销，还取决于实际输入。接下来阅读 [共享前缀：让多个判断复用同一段上下文](shared-prefix-cache_zh.md)，了解这一优化如何工作、适合什么场景，以及实测能快多少。
+前缀复用能节省多少计算，是否足以抵消多轮提交的开销，还取决于实际输入。接下来阅读 [共享前缀：让多个判断复用同一段上下文](shared-prefix-cache.md)，了解这一优化如何工作、适合什么场景，以及实测能快多少。

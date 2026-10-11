@@ -1,6 +1,6 @@
 # From Jev Request to LLM Request
 
-[简体中文](request-to-model_zh.md) · [Back to README](../README.md)
+[简体中文](../zh/request-to-model.md) · [Back to README](../../README.md)
 
 This guide explains **how LLM2Jev implements these requests using an LLM**, not the internals of Jev's official service.
 

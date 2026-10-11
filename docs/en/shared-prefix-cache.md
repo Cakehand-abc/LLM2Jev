@@ -1,6 +1,6 @@
 # Shared prefixes: reuse context across multiple decisions
 
-[简体中文](shared-prefix-cache_zh.md) · [Back to README](../README.md)
+[简体中文](../zh/shared-prefix-cache.md) · [Back to README](../../README.md)
 
 Read [From JevRequest to LLM inputs](request-to-model.md) first to understand why one request produces multiple candidate judgments and how their scores become final answers.
 
@@ -38,7 +38,7 @@ Staged submission first scores a real candidate to establish a shared prefix, th
 
 The diagram maps each candidate input to Jev's fields: `state`, its question's `instructions`, and one `criteria` candidate. `department` and `severity` are question IDs; `criteria.shipping` abbreviates `criteria["shipping"]` and includes the option name and definition. Solid blue blocks require new computation; dashed green blocks reuse KV from earlier stages. The right column shows the shared cache after each stage.
 
-![Six criteria candidates scored in three stages, reusing state and question instructions through SGLang Radix Cache.](../assets/shared-prefix-stages.svg)
+![Six criteria candidates scored in three stages, reusing state and question instructions through SGLang Radix Cache.](../../assets/shared-prefix-stages.svg)
 
 For the example above, the submission sequence is:
 

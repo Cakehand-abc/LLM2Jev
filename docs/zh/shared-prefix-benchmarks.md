@@ -1,6 +1,6 @@
 # 共享前缀：性能测评
 
-[English](shared-prefix-benchmarks.md) · [共享前缀原理](shared-prefix-cache_zh.md)
+[English](../en/shared-prefix-benchmarks.md) · [共享前缀原理](shared-prefix-cache.md)
 
 这里的冷 KV 请求指模型和计算内核已预热，但相关输入的 KV 缓存尚不存在；热请求则可以复用已有前缀。测评比较本地 Python `SGLangBackend` 的 `all` 与 `staged` 提交方式。
 
@@ -15,4 +15,4 @@
 
 长上下文样例约加速 4.9 倍；短输入则变慢。同一长上下文样例在全热缓存下，一次提交约 25.88 ms，分阶段约 50.79 ms。请用实际请求选择模式，这些数字不代表所有模型、硬件或并发负载的表现。
 
-配置示例和模式选择建议见[使用指南](usage_zh.md)。
+配置示例和模式选择建议见[使用指南](usage.md)。

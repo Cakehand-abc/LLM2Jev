@@ -1,6 +1,6 @@
 # Usage guide
 
-[简体中文](usage_zh.md) · [Back to README](../README.md)
+[简体中文](../zh/usage.md) · [Back to README](../../README.md)
 
 Complete the [installation](installation.md) first. Prepare model files before use: SGLang and Transformers use Hugging Face-compatible models; MLX uses MLX-LM or MLX-VLM models.
 

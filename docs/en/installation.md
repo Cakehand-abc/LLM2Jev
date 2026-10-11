@@ -1,6 +1,6 @@
 # Installation
 
-[简体中文](installation_zh.md) · [Back to README](../README.md)
+[简体中文](../zh/installation.md) · [Back to README](../../README.md)
 
 ## Step 1: Clone the repository
 

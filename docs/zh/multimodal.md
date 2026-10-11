@@ -1,6 +1,6 @@
 # 使用多模态数据
 
-[English](multimodal.md) · [返回 README](../README_zh.md)
+[English](../en/multimodal.md) · [返回 README](../../README_zh.md)
 
 LLM2Jev 支持在 `state` 或问题的 `instructions` 中提交图文内容。
 
@@ -113,7 +113,7 @@ with MLXBackend(model_path, multimodal=True, batch_size=8) as backend:
 
 ## HTTP API 调用
 
-按照[使用指南](usage_zh.md#online-http-服务)启动 SGLang 多模态服务。
+按照[使用指南](usage.md#online-http-服务)启动 SGLang 多模态服务。
 
 
 ```bash

@@ -1,6 +1,6 @@
 # Using multimodal data
 
-[简体中文](multimodal_zh.md) · [Back to README](../README.md)
+[简体中文](../zh/multimodal.md) · [Back to README](../../README.md)
 
 LLM2Jev supports text and images in `state` or a question's `instructions`.
 

@@ -1,0 +1,19 @@
+{
+  "name": "llm2jev-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node prepare.mjs && vitepress dev . --host 127.0.0.1",
+    "build": "node prepare.mjs && vitepress build .",
+    "preview": "vitepress preview . --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
+    "vitepress": "1.6.4",
+    "vue": "^3.5.13"
+  },
+  "overrides": {
+    "vite": "^6.4.4"
+  }
+}

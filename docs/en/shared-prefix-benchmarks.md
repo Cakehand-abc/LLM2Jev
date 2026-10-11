@@ -1,6 +1,6 @@
 # Shared prefixes: performance benchmarks
 
-[简体中文](shared-prefix-benchmarks_zh.md) · [Shared-prefix concepts](shared-prefix-cache.md)
+[简体中文](../zh/shared-prefix-benchmarks.md) · [Shared-prefix concepts](shared-prefix-cache.md)
 
 A cold-KV request here has no relevant cached input prefix, but the model and computation kernels are already warmed up. A warm request can reuse existing prefixes. These measurements compare `all` and `staged` submission in the local Python `SGLangBackend`.
 

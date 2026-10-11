@@ -1,6 +1,6 @@
 # 安装指南
 
-[English](installation.md) · [返回 README](../README_zh.md)
+[English](../en/installation.md) · [返回 README](../../README_zh.md)
 
 ## 步骤一：克隆仓库
 
@@ -52,4 +52,4 @@ python -m pip install -e ".[transformers]"
 python -m pip install -e ".[mlx]"
 ```
 
-安装完成后，参阅[使用指南](usage_zh.md)运行 Python 示例或启动 SGLang、MLX、Transformers HTTP 服务。
+安装完成后，参阅[使用指南](usage.md)运行 Python 示例或启动 SGLang、MLX、Transformers HTTP 服务。

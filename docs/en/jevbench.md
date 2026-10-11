@@ -1,4 +1,4 @@
-## JevBench public benchmark
+# JevBench public benchmark
 
 This run evaluates LLM2Jev on the 231 public items from the `original`, `easy`, and
 `hard` datasets. The TypeSafe adapter sends each compiled decision to the local

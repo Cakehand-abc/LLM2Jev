@@ -1,8 +1,8 @@
 # 使用指南
 
-[English](usage.md) · [返回 README](../README_zh.md)
+[English](../en/usage.md) · [返回 README](../../README_zh.md)
 
-请先完成[安装](installation_zh.md)。使用前准备好模型文件：SGLang 和 Transformers 使用 Hugging Face 兼容模型，MLX 使用 MLX-LM 或 MLX-VLM 模型。
+请先完成[安装](installation.md)。使用前准备好模型文件：SGLang 和 Transformers 使用 Hugging Face 兼容模型，MLX 使用 MLX-LM 或 MLX-VLM 模型。
 
 ## Offline: Python API
 
@@ -58,7 +58,7 @@ with MLXBackend("/path/to/mlx-model") as backend:
     response = LLM2Jev(backend=backend).evaluate(request)
 ```
 
-图片模型需使用 `MLXBackend(..., multimodal=True)`。详见[多模态输入](multimodal_zh.md)和 [MLX 部分](#offline-python-api)。
+图片模型需使用 `MLXBackend(..., multimodal=True)`。详见[多模态输入](multimodal.md)和 [MLX 部分](#offline-python-api)。
 
 ## Online: HTTP 服务
 
