@@ -283,7 +283,7 @@ class JevResponseTests(unittest.TestCase):
         )
         noul = NoulAnswer(noul=0.9)
         response = JevResponse(
-            model="本地模型",
+            model="jev-latest",
             answers={"department": choice, "severity": score, "refund": noul},
             usage=Usage(input_tokens=120, output_tokens=12),
         )

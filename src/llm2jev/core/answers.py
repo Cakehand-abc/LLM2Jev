@@ -12,7 +12,19 @@ from .types import JSONContent
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ChoiceAnswer:
-    """A selected choice and the probability of every available choice."""
+    """A selected choice and the probability distribution of available choices.
+
+    Attributes:
+        choice: The selected candidate choice with the highest probability.
+        confidence: The confidence score of the winning choice.
+        probabilities: Mapping of candidate choice names to normalized probabilities
+            (sum-of-yes normalized across all evaluated candidate criteria).
+        raw_probabilities: Optional mapping of candidate choice names to unnormalized
+            binary yes-probabilities P(yes | candidate). Preserving these raw binary
+            scores protects downstream systems (e.g. hierarchical routers, safety
+            guardrails, confidence calibrators) against denominator dilution when
+            multiple orthogonal or co-occurring criteria score highly simultaneously.
+    """
 
     choice: str
     confidence: float
@@ -36,10 +48,13 @@ class ChoiceAnswer:
 
         if self.raw_probabilities is not None:
             raw_probabilities = dict(self.raw_probabilities)
+            # Validate key types: choice keys must always be non-empty strings
             if any(not isinstance(name, str) or not name for name in raw_probabilities):
                 raise ValueError("raw_probability keys must be non-empty strings")
+            # Defensive integrity check: raw_probabilities must exactly mirror choice candidates
             if set(raw_probabilities) != set(probabilities):
                 raise ValueError("raw_probabilities and probabilities must contain the same choices")
+            # Ensure each unnormalized score is a valid finite probability in [0.0, 1.0]
             for prob in raw_probabilities.values():
                 validate_probability(prob, "raw_probability")
             object.__setattr__(self, "raw_probabilities", raw_probabilities)
@@ -58,7 +73,19 @@ class ChoiceAnswer:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ScoreAnswer:
-    """A probability-weighted score and its ordered rubric."""
+    """A probability-weighted score and its ordered rubric distribution.
+
+    Attributes:
+        score: The expected value (probability-weighted average) across rubric levels.
+        confidence: The confidence score of the predicted distribution.
+        legend: Mapping of integer levels to their descriptive rubric criteria.
+        probabilities: Mapping of integer levels to normalized probabilities
+            (sum-of-yes normalized across all rubric levels).
+        raw_probabilities: Optional mapping of integer levels to unnormalized
+            binary yes-probabilities P(yes | level). Retaining raw binary scores
+            allows downstream calibration, multi-level gating, and anomaly detection
+            without distortion from relative normalizations.
+    """
 
     score: float
     confidence: float
@@ -98,10 +125,13 @@ class ScoreAnswer:
 
         if self.raw_probabilities is not None:
             raw_probabilities = dict(self.raw_probabilities)
+            # Level keys must be exact integers (explicitly rejecting booleans)
             if any(isinstance(level, bool) or not isinstance(level, int) for level in raw_probabilities):
                 raise ValueError("raw_probability keys must be integers")
+            # Defensive integrity check: raw_probabilities must exactly mirror rubric levels
             if set(raw_probabilities) != set(legend):
                 raise ValueError("legend and raw_probabilities must contain the same levels")
+            # Ensure each unnormalized score is a valid finite probability in [0.0, 1.0]
             for prob in raw_probabilities.values():
                 validate_probability(prob, "raw_probability")
             object.__setattr__(self, "raw_probabilities", raw_probabilities)

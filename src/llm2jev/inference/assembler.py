@@ -73,6 +73,7 @@ def assemble_response(
             probabilities = _normalize(raw, normalizer)
             labels = list(question.criteria)
             by_label = dict(zip(labels, probabilities))
+            # Preserve unnormalized binary probabilities to prevent denominator dilution
             raw_by_label = dict(zip(labels, raw))
             choice = max(labels, key=by_label.__getitem__)
             answers[question_id] = ChoiceAnswer(
@@ -84,6 +85,7 @@ def assemble_response(
         elif isinstance(question, Score):
             probabilities = _normalize(raw, normalizer)
             by_level = dict(enumerate(probabilities))
+            # Preserve unnormalized binary probabilities per rubric level
             raw_by_level = dict(enumerate(raw))
             score = math.fsum(level * probability for level, probability in by_level.items())
             answers[question_id] = ScoreAnswer(
