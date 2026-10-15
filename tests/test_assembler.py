@@ -78,6 +78,7 @@ class AssembleResponseTests(unittest.TestCase):
         answer = response.answers["tone"]
         self.assertIsInstance(answer, ChoiceAnswer)
         self.assertEqual(answer.probabilities, {"calm": 0.75, "angry": 0.25})  # type: ignore[union-attr]
+        self.assertEqual(answer.raw_probabilities, {"calm": 0.9, "angry": 0.3})  # type: ignore[union-attr]
         self.assertEqual(response.usage, Usage())
 
     def test_all_zero_candidates_become_uniform(self) -> None:
@@ -98,6 +99,7 @@ class AssembleResponseTests(unittest.TestCase):
         self.assertIsInstance(answer, ScoreAnswer)
         self.assertAlmostEqual(answer.score, 1.0)  # type: ignore[union-attr]
         self.assertAlmostEqual(answer.confidence, 0.0)  # type: ignore[union-attr]
+        self.assertEqual(answer.raw_probabilities, {0: 0.0, 1: 0.0, 2: 0.0})  # type: ignore[union-attr]
 
     def test_uses_custom_normalizer(self) -> None:
         request = JevRequest(

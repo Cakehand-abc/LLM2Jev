@@ -45,6 +45,52 @@ class ChoiceAnswerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ChoiceAnswer(choice="a", confidence=0.5, probabilities={"a": 0.4, "b": 0.6})
 
+    def test_requires_matching_choice_and_raw_probability_keys(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            ChoiceAnswer(
+                choice="a",
+                confidence=0.5,
+                probabilities={"a": 0.6, "b": 0.4},
+                raw_probabilities={"a": 0.6, "c": 0.4},
+            )
+        self.assertEqual(str(ctx.exception), "raw_probabilities and probabilities must contain the same choices")
+
+        with self.assertRaises(ValueError) as ctx:
+            ChoiceAnswer(
+                choice="a",
+                confidence=0.5,
+                probabilities={"a": 0.6, "b": 0.4},
+                raw_probabilities={"a": 0.6},
+            )
+        self.assertEqual(str(ctx.exception), "raw_probabilities and probabilities must contain the same choices")
+
+        with self.assertRaises(ValueError) as ctx:
+            ChoiceAnswer(
+                choice="a",
+                confidence=0.5,
+                probabilities={"a": 0.6, "b": 0.4},
+                raw_probabilities={"a": 0.6, "b": 0.4, "extra": 0.1},
+            )
+        self.assertEqual(str(ctx.exception), "raw_probabilities and probabilities must contain the same choices")
+
+        with self.assertRaises(ValueError) as ctx:
+            ChoiceAnswer(
+                choice="a",
+                confidence=0.5,
+                probabilities={"a": 0.6, "b": 0.4},
+                raw_probabilities={1: 0.6, "b": 0.4},  # type: ignore[arg-type]
+            )
+        self.assertEqual(str(ctx.exception), "raw_probability keys must be non-empty strings")
+
+        with self.assertRaises(ValueError) as ctx:
+            ChoiceAnswer(
+                choice="a",
+                confidence=0.5,
+                probabilities={"a": 0.6, "b": 0.4},
+                raw_probabilities={"a": 1.2, "b": 0.4},
+            )
+        self.assertEqual(str(ctx.exception), "raw_probability must be a number from 0 to 1")
+
 
 class ScoreAnswerTests(unittest.TestCase):
     def test_serializes_integer_levels_as_json_keys(self) -> None:
@@ -95,6 +141,67 @@ class ScoreAnswerTests(unittest.TestCase):
                 legend={0: "Low", 1: "High"},
                 probabilities={0: 1.0},
             )
+
+    def test_requires_matching_legend_and_raw_probability_levels(self) -> None:
+        with self.assertRaises(ValueError) as ctx:
+            ScoreAnswer(
+                score=0.25,
+                confidence=0.7,
+                legend={0: "Low", 1: "High"},
+                probabilities={0: 0.75, 1: 0.25},
+                raw_probabilities={0: 0.75},
+            )
+        self.assertEqual(str(ctx.exception), "legend and raw_probabilities must contain the same levels")
+
+        with self.assertRaises(ValueError) as ctx:
+            ScoreAnswer(
+                score=0.25,
+                confidence=0.7,
+                legend={0: "Low", 1: "High"},
+                probabilities={0: 0.75, 1: 0.25},
+                raw_probabilities={-1: 0.5, 0: 0.75, 1: 0.25},
+            )
+        self.assertEqual(str(ctx.exception), "legend and raw_probabilities must contain the same levels")
+
+        with self.assertRaises(ValueError) as ctx:
+            ScoreAnswer(
+                score=0.25,
+                confidence=0.7,
+                legend={0: "Low", 1: "High"},
+                probabilities={0: 0.75, 1: 0.25},
+                raw_probabilities={0: 0.75, 1: 0.25, 2: 0.1},
+            )
+        self.assertEqual(str(ctx.exception), "legend and raw_probabilities must contain the same levels")
+
+        with self.assertRaises(ValueError) as ctx:
+            ScoreAnswer(
+                score=0.25,
+                confidence=0.7,
+                legend={0: "Low", 1: "High"},
+                probabilities={0: 0.75, 1: 0.25},
+                raw_probabilities={"0": 0.75, 1: 0.25},  # type: ignore[arg-type]
+            )
+        self.assertEqual(str(ctx.exception), "raw_probability keys must be integers")
+
+        with self.assertRaises(ValueError) as ctx:
+            ScoreAnswer(
+                score=0.25,
+                confidence=0.7,
+                legend={0: "Low", 1: "High"},
+                probabilities={0: 0.75, 1: 0.25},
+                raw_probabilities={True: 0.75, 1: 0.25},  # type: ignore[arg-type]
+            )
+        self.assertEqual(str(ctx.exception), "raw_probability keys must be integers")
+
+        with self.assertRaises(ValueError) as ctx:
+            ScoreAnswer(
+                score=0.25,
+                confidence=0.7,
+                legend={0: "Low", 1: "High"},
+                probabilities={0: 0.75, 1: 0.25},
+                raw_probabilities={0: 1.5, 1: 0.25},
+            )
+        self.assertEqual(str(ctx.exception), "raw_probability must be a number from 0 to 1")
 
     def test_requires_weighted_average_score(self) -> None:
         with self.assertRaises(ValueError):
@@ -159,6 +266,42 @@ class JevResponseTests(unittest.TestCase):
         self.assertIn('"confidence": 0.80', response.json)
         self.assertIn('"noul": 0.90', response.json)
         self.assertIn('"input_tokens": 120', response.json)
+
+    def test_serializes_and_groups_answers_with_raw_probabilities(self) -> None:
+        choice = ChoiceAnswer(
+            choice="returns",
+            confidence=0.8,
+            probabilities={"returns": 0.8, "billing": 0.2},
+            raw_probabilities={"returns": 0.9, "billing": 0.3},
+        )
+        score = ScoreAnswer(
+            score=0.25,
+            confidence=0.7,
+            legend={0: "Low", 1: "High"},
+            probabilities={0: 0.75, 1: 0.25},
+            raw_probabilities={0: 0.80, 1: 0.30},
+        )
+        noul = NoulAnswer(noul=0.9)
+        response = JevResponse(
+            model="本地模型",
+            answers={"department": choice, "severity": score, "refund": noul},
+            usage=Usage(input_tokens=120, output_tokens=12),
+        )
+
+        self.assertEqual(response.choices, {"department": choice})
+        self.assertEqual(response.scores, {"severity": score})
+        self.assertEqual(response.nouls, {"refund": noul})
+        to_dict = response.to_dict()
+        self.assertEqual(
+            to_dict["answers"]["department"]["raw_probabilities"],  # type: ignore[index]
+            {"returns": 0.9, "billing": 0.3},
+        )
+        self.assertEqual(
+            to_dict["answers"]["severity"]["raw_probabilities"],  # type: ignore[index]
+            {"0": 0.80, "1": 0.30},
+        )
+        self.assertEqual(json.loads(response.json), to_dict)
+        self.assertIn('"raw_probabilities"', response.json)
 
     def test_json_rounds_floats_to_two_decimal_places_without_mutating_values(self) -> None:
         response = JevResponse(

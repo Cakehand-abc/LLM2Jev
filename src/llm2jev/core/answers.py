@@ -38,6 +38,8 @@ class ChoiceAnswer:
             raw_probabilities = dict(self.raw_probabilities)
             if any(not isinstance(name, str) or not name for name in raw_probabilities):
                 raise ValueError("raw_probability keys must be non-empty strings")
+            if set(raw_probabilities) != set(probabilities):
+                raise ValueError("raw_probabilities and probabilities must contain the same choices")
             for prob in raw_probabilities.values():
                 validate_probability(prob, "raw_probability")
             object.__setattr__(self, "raw_probabilities", raw_probabilities)
@@ -98,6 +100,8 @@ class ScoreAnswer:
             raw_probabilities = dict(self.raw_probabilities)
             if any(isinstance(level, bool) or not isinstance(level, int) for level in raw_probabilities):
                 raise ValueError("raw_probability keys must be integers")
+            if set(raw_probabilities) != set(legend):
+                raise ValueError("legend and raw_probabilities must contain the same levels")
             for prob in raw_probabilities.values():
                 validate_probability(prob, "raw_probability")
             object.__setattr__(self, "raw_probabilities", raw_probabilities)
