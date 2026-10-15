@@ -17,6 +17,7 @@ class ChoiceAnswer:
     choice: str
     confidence: float
     probabilities: Mapping[str, float]
+    raw_probabilities: Mapping[str, float] | None = None
 
     type: ClassVar[str] = "choice"
 
@@ -33,13 +34,24 @@ class ChoiceAnswer:
             raise ValueError("choice must have the highest probability")
         object.__setattr__(self, "probabilities", probabilities)
 
+        if self.raw_probabilities is not None:
+            raw_probabilities = dict(self.raw_probabilities)
+            if any(not isinstance(name, str) or not name for name in raw_probabilities):
+                raise ValueError("raw_probability keys must be non-empty strings")
+            for prob in raw_probabilities.values():
+                validate_probability(prob, "raw_probability")
+            object.__setattr__(self, "raw_probabilities", raw_probabilities)
+
     def to_dict(self) -> dict[str, object]:
-        return {
+        data: dict[str, object] = {
             "type": self.type,
             "choice": self.choice,
             "confidence": self.confidence,
             "probabilities": dict(self.probabilities),
         }
+        if self.raw_probabilities is not None:
+            data["raw_probabilities"] = dict(self.raw_probabilities)
+        return data
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -50,6 +62,7 @@ class ScoreAnswer:
     confidence: float
     legend: Mapping[int, JSONContent]
     probabilities: Mapping[int, float]
+    raw_probabilities: Mapping[int, float] | None = None
 
     type: ClassVar[str] = "score"
 
@@ -81,14 +94,25 @@ class ScoreAnswer:
         object.__setattr__(self, "legend", legend)
         object.__setattr__(self, "probabilities", probabilities)
 
+        if self.raw_probabilities is not None:
+            raw_probabilities = dict(self.raw_probabilities)
+            if any(isinstance(level, bool) or not isinstance(level, int) for level in raw_probabilities):
+                raise ValueError("raw_probability keys must be integers")
+            for prob in raw_probabilities.values():
+                validate_probability(prob, "raw_probability")
+            object.__setattr__(self, "raw_probabilities", raw_probabilities)
+
     def to_dict(self) -> dict[str, object]:
-        return {
+        data: dict[str, object] = {
             "type": self.type,
             "score": self.score,
             "confidence": self.confidence,
             "legend": {str(level): description for level, description in self.legend.items()},
             "probabilities": {str(level): probability for level, probability in self.probabilities.items()},
         }
+        if self.raw_probabilities is not None:
+            data["raw_probabilities"] = {str(level): prob for level, prob in self.raw_probabilities.items()}
+        return data
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

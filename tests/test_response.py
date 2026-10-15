@@ -22,6 +22,25 @@ class ChoiceAnswerTests(unittest.TestCase):
             },
         )
 
+    def test_serializes_choice_answer_with_raw_probabilities(self) -> None:
+        answer = ChoiceAnswer(
+            choice="returns",
+            confidence=0.39,
+            probabilities={"shipping": 0.02, "billing": 0.38, "returns": 0.60},
+            raw_probabilities={"shipping": 0.05, "billing": 0.45, "returns": 0.70},
+        )
+
+        self.assertEqual(
+            answer.to_dict(),
+            {
+                "type": "choice",
+                "choice": "returns",
+                "confidence": 0.39,
+                "probabilities": {"shipping": 0.02, "billing": 0.38, "returns": 0.60},
+                "raw_probabilities": {"shipping": 0.05, "billing": 0.45, "returns": 0.70},
+            },
+        )
+
     def test_choice_must_have_highest_probability(self) -> None:
         with self.assertRaises(ValueError):
             ChoiceAnswer(choice="a", confidence=0.5, probabilities={"a": 0.4, "b": 0.6})
@@ -44,6 +63,27 @@ class ScoreAnswerTests(unittest.TestCase):
                 "confidence": 0.63,
                 "legend": {"0": "Cosmetic", "1": "Degraded", "2": "Blocking"},
                 "probabilities": {"0": 0.0, "1": 0.76, "2": 0.24},
+            },
+        )
+
+    def test_serializes_score_answer_with_raw_probabilities(self) -> None:
+        answer = ScoreAnswer(
+            score=1.24,
+            confidence=0.63,
+            legend={0: "Cosmetic", 1: "Degraded", 2: "Blocking"},
+            probabilities={0: 0.0, 1: 0.76, 2: 0.24},
+            raw_probabilities={0: 0.01, 1: 0.85, 2: 0.30},
+        )
+
+        self.assertEqual(
+            answer.to_dict(),
+            {
+                "type": "score",
+                "score": 1.24,
+                "confidence": 0.63,
+                "legend": {"0": "Cosmetic", "1": "Degraded", "2": "Blocking"},
+                "probabilities": {"0": 0.0, "1": 0.76, "2": 0.24},
+                "raw_probabilities": {"0": 0.01, "1": 0.85, "2": 0.30},
             },
         )
 

@@ -43,11 +43,19 @@ class AssembleResponseTests(unittest.TestCase):
         self.assertIsInstance(department, ChoiceAnswer)
         self.assertEqual(department.choice, "billing")  # type: ignore[union-attr]
         self.assertAlmostEqual(department.confidence, 0.4)  # type: ignore[union-attr]
+        self.assertEqual(
+            department.raw_probabilities,  # type: ignore[union-attr]
+            {"billing": 0.6, "returns": 0.2, "shipping": 0.2},
+        )
 
         severity = response.answers["severity"]
         self.assertIsInstance(severity, ScoreAnswer)
         self.assertAlmostEqual(severity.score, 1.24)  # type: ignore[union-attr]
         self.assertAlmostEqual(severity.confidence, 0.64)  # type: ignore[union-attr]
+        self.assertEqual(
+            severity.raw_probabilities,  # type: ignore[union-attr]
+            {0: 0.0, 1: 0.76, 2: 0.24},
+        )
 
         self.assertEqual(response.answers["refund"], NoulAnswer(noul=0.91))
         self.assertEqual(response.answers["explicit_refund"], NoulAnswer(noul=0.8))

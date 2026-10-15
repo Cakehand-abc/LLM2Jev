@@ -73,21 +73,25 @@ def assemble_response(
             probabilities = _normalize(raw, normalizer)
             labels = list(question.criteria)
             by_label = dict(zip(labels, probabilities))
+            raw_by_label = dict(zip(labels, raw))
             choice = max(labels, key=by_label.__getitem__)
             answers[question_id] = ChoiceAnswer(
                 choice=choice,
                 confidence=_confidence(probabilities),
                 probabilities=by_label,
+                raw_probabilities=raw_by_label,
             )
         elif isinstance(question, Score):
             probabilities = _normalize(raw, normalizer)
             by_level = dict(enumerate(probabilities))
+            raw_by_level = dict(enumerate(raw))
             score = math.fsum(level * probability for level, probability in by_level.items())
             answers[question_id] = ScoreAnswer(
                 score=score,
                 confidence=_confidence(probabilities),
                 legend=dict(enumerate(question.criteria)),
                 probabilities=by_level,
+                raw_probabilities=raw_by_level,
             )
         elif isinstance(question, Noul):
             if question.criteria:
